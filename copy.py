@@ -1,5 +1,3 @@
-# тесты проходит, только если ошибки перехватывать только в функциях
-
 import json
 import logging
 import os
@@ -60,10 +58,6 @@ HOMEWORK_VERDICTS = {
 def send_message(bot, message):
     """Отправка сформированного сообщения в Telegram с помощью бота."""
     logger.info('Начато отправка сообщения.')
-    # не понял по поводу перехвата ошибок в main()
-    # Два раза перехватывать ошибки и тут в самой
-    # функции send_message?
-    # тесты проходит, только если ошибки перехватывать только в функциях
     try:
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
@@ -107,9 +101,8 @@ def check_response(response):
     try:
         homeworks = response['homeworks']
     except KeyError:
-        # тесты настойчиво просили обработку отшибки делалать именно тут
         raise JSONContentError(
-            'Ошибка: в ответе API домашки нет необходимых ключей')
+            'Ошибка: в ответе API домашки нет ключа homeworks')
     else:
         logger.info('Список домашек в ответе от API получен.')
 

@@ -10,8 +10,8 @@ class TelegramHandler(Handler):
 
     def emit(self, record):
         message = self.format(record)
-        current_error = record.message
+        current_errors = record.message
 
-        if current_error != self.previous_error:
+        if current_errors != self.previous_error:
             self.bot.send_message(chat_id=self.chat_id, text=message)
-            self.previous_error = current_error
+            self.previous_error = current_errors
