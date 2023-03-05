@@ -149,10 +149,10 @@ def main():
         logger.critical('Ошибка в загрузке переменнных')
         sys.exit('Программа завершилась')
 
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     previous_message = None
 
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     logger.info('Связь с ботом установлена.')
 
     while True:
@@ -192,11 +192,7 @@ def main():
         except Exception as error:
             current_error = f'Сбой в работе программы: "{error}"'
             logger.error(current_error)
-            try:
-                send_message(bot, current_error)
-            except Exception as error:
-                logger.error(
-                    f'Ошибка отправки сообщения в Telegram. {error}')
+            send_message(bot, current_error)
             time.sleep(RETRY_PERIOD)
 
         finally:
