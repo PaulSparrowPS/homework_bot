@@ -1,5 +1,3 @@
-# тесты проходит, только если ошибки перехватывать только в функциях
-
 import json
 import logging
 import os
@@ -11,28 +9,25 @@ import time
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
-# from http import HTTPStatus
 
 from exceptions import (HTTPConnectionError,
                         JSONConvertError,
                         JSONContentError,
                         ParsingError)
 
-from telegram_handler import TelegramHandler
-
 load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
 TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
 TELEGRAM_CHAT_ID = os.getenv('TELEGRAM_CHAT_ID')
 
-
 logger = logging.getLogger(__name__)
+
 formatter = logging.Formatter('%(asctime)s [%(levelname)s] %(message)s')
 logger.setLevel(logging.DEBUG)
 
 rf_handler = RotatingFileHandler(
     'homework_bot.log',
-    maxBytes=50_000,
+    maxBytes=50000,
     backupCount=1
 )
 rf_handler.setLevel(logging.DEBUG)
@@ -44,11 +39,9 @@ s_handler.setLevel(logging.DEBUG)
 s_handler.setFormatter(formatter)
 logger.addHandler(s_handler)
 
-
 RETRY_PERIOD = 10 * 60  # 10 минут
 ENDPOINT = 'https://practicum.yandex.ru/api/user_api/homework_statuses/'
 HEADERS = {'Authorization': f'OAuth {PRACTICUM_TOKEN}'}
-
 
 HOMEWORK_VERDICTS = {
     'approved': 'Работа проверена: ревьюеру всё понравилось. Ура!',
@@ -60,19 +53,15 @@ HOMEWORK_VERDICTS = {
 def send_message(bot, message):
     """Отправка сформированного сообщения в Telegram с помощью бота."""
     logger.info('Начато отправка сообщения.')
-    # не понял по поводу перехвата ошибок в main()
-    # Два раза перехватывать ошибки и тут в самой
-    # функции send_message?
-    # тесты проходит, только если ошибки перехватывать только в функциях
     try:
         bot.send_message(
             chat_id=TELEGRAM_CHAT_ID,
             text=message
         )
-        logger.debug('Бот успешно отправил сообщение в Telegram.')
+        logger.debug('Успешно отправлено сообщение в Telegram.')
     except Exception as error:
         logger.error(
-            f'Боту не удалось отправить сообщение в Telegram. {error}'
+            f'Не удалось отправить сообщение в Telegram. {error}'
         )
 
 
@@ -88,7 +77,6 @@ def get_api_answer(current_timestamp):
     else:
         logger.info('Ответ от API получен.')
 
-    # if HTTPStatus.OK != 200: # C этим тесты не проходит
     if response.status_code != 200:
         raise HTTPConnectionError('Ответ от API не верный.')
 
@@ -107,7 +95,6 @@ def check_response(response):
     try:
         homeworks = response['homeworks']
     except KeyError:
-        # тесты настойчиво просили обработку отшибки делалать именно тут
         raise JSONContentError(
             'Ошибка: в ответе API домашки нет необходимых ключей')
     else:
@@ -148,10 +135,8 @@ def check_tokens():
         TELEGRAM_CHAT_ID: 'TELEGRAM_CHAT_ID',
     }
     retv = all(ENV_VARS)
-    if retv:
+    if all(ENV_VARS):
         logger.info('Проверка переменных окружения пройдена успешно.')
-    else:
-        logger.critical('Отсутствует обязательная переменная окружения')
 
     return retv
 
@@ -161,17 +146,14 @@ def main():
     logger.info('__Старт программы__')
 
     if not check_tokens():
-        exit()
+        logger.critical('Ошибка в загрузке переменнных')
+        sys.exit('Программа завершилась')
 
+    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     current_timestamp = int(time.time())
     previous_message = None
 
-    bot = telegram.Bot(token=TELEGRAM_TOKEN)
     logger.info('Связь с ботом установлена.')
-    t_handler = TelegramHandler(bot, TELEGRAM_CHAT_ID)
-    t_handler.setLevel(logging.ERROR)
-    t_handler.setFormatter(formatter)
-    logger.addHandler(t_handler)
 
     while True:
         try:
@@ -202,7 +184,6 @@ def main():
             else:
                 logger.info('Время запроса получено из ответа от API.')
             finally:
-                time.sleep(RETRY_PERIOD)
                 logger.debug(
                     'Программа работает.',
                     'Предыдущий запрос был выполнен успешно.'
@@ -211,10 +192,15 @@ def main():
         except Exception as error:
             current_error = f'Сбой в работе программы: "{error}"'
             logger.error(current_error)
-
+            try:
+                send_message(bot, current_error)
+            except Exception as error:
+                logger.error(
+                    f'Ошибка отправки сообщения в Telegram. {error}')
             time.sleep(RETRY_PERIOD)
 
         finally:
+            time.sleep(RETRY_PERIOD)
             logger.info('__Новый запрос__')
 
 
