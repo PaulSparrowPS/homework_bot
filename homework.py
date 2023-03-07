@@ -9,11 +9,14 @@ import time
 from dotenv import load_dotenv
 from logging.handlers import RotatingFileHandler
 from logging import StreamHandler
+from http import HTTPStatus
 
 from exceptions import (HTTPConnectionError,
                         JSONConvertError,
                         JSONContentError,
-                        ParsingError)
+                        ParsingError,
+                        TelegramError
+                        )
 
 load_dotenv()
 PRACTICUM_TOKEN = os.getenv('PRACTICUM_TOKEN')
@@ -61,6 +64,9 @@ def send_message(bot, message):
         logger.debug('Успешно отправлено сообщение в Telegram.')
     except Exception as error:
         logger.error(
+            f'Боту не удалось отправить сообщение в Telegram. {error}'
+        )
+        raise TelegramError(
             f'Не удалось отправить сообщение в Telegram. {error}'
         )
 
@@ -77,7 +83,7 @@ def get_api_answer(current_timestamp):
     else:
         logger.info('Ответ от API получен.')
 
-    if response.status_code != 200:
+    if response.status_code != HTTPStatus.OK:
         raise HTTPConnectionError('Ответ от API не верный.')
 
     try:
@@ -134,11 +140,8 @@ def check_tokens():
         TELEGRAM_TOKEN: 'TELEGRAM_TOKEN',
         TELEGRAM_CHAT_ID: 'TELEGRAM_CHAT_ID',
     }
-    retv = all(ENV_VARS)
-    if all(ENV_VARS):
-        logger.info('Проверка переменных окружения пройдена успешно.')
 
-    return retv
+    return all(ENV_VARS)
 
 
 def main():
@@ -181,23 +184,14 @@ def main():
                     'Не удалось получить время запроса из ответа от API. '
                     'Для выполнения следующего запроса принято текущее время.'
                 )
-            else:
-                logger.info('Время запроса получено из ответа от API.')
-            finally:
-                logger.debug(
-                    'Программа работает.',
-                    'Предыдущий запрос был выполнен успешно.'
-                )
 
         except Exception as error:
             current_error = f'Сбой в работе программы: "{error}"'
             logger.error(current_error)
-            send_message(bot, current_error)
             time.sleep(RETRY_PERIOD)
 
         finally:
             time.sleep(RETRY_PERIOD)
-            logger.info('__Новый запрос__')
 
 
 if __name__ == '__main__':

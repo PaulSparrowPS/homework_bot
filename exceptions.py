@@ -16,3 +16,8 @@ class JSONContentError(Exception):
 class ParsingError(Exception):
     """Ошибка при распознавании данных."""
     pass
+
+
+class TelegramError(Exception):
+    """Ошибка при отправке сообщения в Телеграм"""
+    pass
