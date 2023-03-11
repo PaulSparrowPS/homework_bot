@@ -15,7 +15,8 @@ from exceptions import (HTTPConnectionError,
                         JSONConvertError,
                         JSONContentError,
                         ParsingError,
-                        TelegramError
+                        TelegramError,
+                        NotForSendingError
                         )
 
 load_dotenv()
@@ -135,11 +136,7 @@ def parse_status(homework):
 
 def check_tokens():
     """Проверка доступности переменных окружения."""
-    ENV_VARS = {
-        PRACTICUM_TOKEN: 'PRACTICUM_TOKEN',
-        TELEGRAM_TOKEN: 'TELEGRAM_TOKEN',
-        TELEGRAM_CHAT_ID: 'TELEGRAM_CHAT_ID',
-    }
+    ENV_VARS = [PRACTICUM_TOKEN, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID]
 
     return all(ENV_VARS)
 
@@ -185,10 +182,13 @@ def main():
                     'Для выполнения следующего запроса принято текущее время.'
                 )
 
+        except NotForSendingError as error:
+            logger.error(error)
+
         except Exception as error:
             current_error = f'Сбой в работе программы: "{error}"'
             logger.error(current_error)
-            time.sleep(RETRY_PERIOD)
+            send_message(bot, current_error)
 
         finally:
             time.sleep(RETRY_PERIOD)

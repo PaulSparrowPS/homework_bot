@@ -18,6 +18,10 @@ class ParsingError(Exception):
     pass
 
 
-class TelegramError(Exception):
+class NotForSendingError(Exception):
+    pass
+
+
+class TelegramError(NotForSendingError):
     """Ошибка при отправке сообщения в Телеграм"""
     pass
