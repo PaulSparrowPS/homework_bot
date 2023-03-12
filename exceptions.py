@@ -25,3 +25,8 @@ class NotForSendingError(Exception):
 class TelegramError(NotForSendingError):
     """Ошибка при отправке сообщения в Телеграм"""
     pass
+
+
+class HomeworksTestList(NotForSendingError):
+    """Ошибка: список домашек пуст"""
+    pass

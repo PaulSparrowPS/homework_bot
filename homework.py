@@ -16,7 +16,8 @@ from exceptions import (HTTPConnectionError,
                         JSONContentError,
                         ParsingError,
                         TelegramError,
-                        NotForSendingError
+                        NotForSendingError,
+                        HomeworksTestList
                         )
 
 load_dotenv()
@@ -107,12 +108,12 @@ def check_response(response):
     else:
         logger.info('Список домашек в ответе от API получен.')
 
-    if not isinstance(response['homeworks'], list):
+    if not isinstance(homeworks, list):
         logger.error('В ответе от API нет списка домашек.')
         raise TypeError('В ответе от API нет списка домашек.')
 
-    if homeworks and not isinstance(homeworks[0], dict):
-        raise JSONContentError('Содержимое списка домашек некорректно.')
+    if not homeworks:
+        raise HomeworksTestList('Список домашек пуст')
 
     return homeworks
 
@@ -160,11 +161,7 @@ def main():
             response = get_api_answer(current_timestamp)
             homeworks = check_response(response)
 
-            if homeworks:
-                message = parse_status(homeworks[0])
-            else:
-                message = 'Обновлений по домашке нет.'
-                logger.debug('Обновлений по домашке нет.')
+            message = parse_status(homeworks[0])
 
             if message != previous_message:
                 logger.info('Сформировано новое сообщение.')
